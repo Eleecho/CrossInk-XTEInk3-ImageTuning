@@ -1,4 +1,4 @@
-> **This is a personal fork of [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader)** with a focus on improved fonts and minimal reading stats.
+> **This is a fork of [CrossInk](https://github.com/uxjulia/CrossInk) by uxjulia**, which is itself a personal fork of [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader). This fork's own contribution is a focused fix for greyscale image rendering on the Xteink X3 (see [What's different in this fork](#whats-different-in-this-fork) below) — everything else in this README, including the feature list immediately following, describes uxjulia's CrossInk fork and is their work, kept here for reference since this repo builds on top of it.
 
 ### Supported Devices
 
@@ -6,9 +6,11 @@
 - Xteink X4
 - Seeed Studio Sticky
 
-## What's different in this fork
+## What's different in uxjulia's CrossInk fork
 
-My goal with this fork was to maintain the core Crosspoint firmware while integrating my preferred typography and some lightweight reading statistics. I’ve focused on keeping the underlying system stable while layering in a few "nice-to-have" features and UI refinements along the way.
+(The following describes uxjulia's CrossInk fork relative to upstream CrossPoint Reader — not a change made in this repo.)
+
+uxjulia's goal with the CrossInk fork was to maintain the core Crosspoint firmware while integrating their preferred typography and some lightweight reading statistics, focusing on keeping the underlying system stable while layering in a few "nice-to-have" features and UI refinements along the way.
 
 <table>
   <tr>
@@ -50,6 +52,14 @@ My goal with this fork was to maintain the core Crosspoint firmware while integr
 - Added customizable Auto Page Turn Interval (anything between 5-120 seconds).
 - Added ability to view Recent Books as a 3x3 grid view.
 - To view a more detailed list for each version, visit the [releases](https://github.com/uxjulia/CrossInk/releases) page to read release notes.
+
+---
+
+## What's different in this fork
+
+This fork's own contribution, on top of everything above from uxjulia's CrossInk fork:
+
+- Fixed greyscale image rendering on the Xteink X3 (528x792, 4-level e-ink panel). The image viewer and sleep screen previously rendered photographic images as crushed, effectively two-tone black-and-white instead of the panel's real four grey levels. Root cause was twofold: the image viewer never drove the greyscale bit-plane rendering pipeline the sleep screen already used correctly, and the Atkinson/Floyd-Steinberg ditherers used inconsistent threshold values that produced visible dithering noise once the pipeline gap was fixed. See `lib/GfxRenderer/BitmapHelpers.h` and `src/activities/util/BmpViewerActivity.cpp`/`.h`.
 
 ---
 
@@ -198,4 +208,6 @@ See [Data Cache](./docs/data-cache.md) for the `.crosspoint` layout and [File Fo
 
 ## Notice on Contributions
 
-This repository does not accept pull requests. Feature requests may be opened in [discussions](https://github.com/uxjulia/CrossInk/discussions), but major features requiring ongoing support should be directed upstream to [CrossPoint](https://github.com/crosspoint-reader/crosspoint-reader).
+This repository doesn't yet have its own stated contribution policy.
+
+For reference, uxjulia's CrossInk fork does not accept pull requests; feature requests for that fork may be opened in [its discussions](https://github.com/uxjulia/CrossInk/discussions), with major features requiring ongoing support directed upstream to [CrossPoint](https://github.com/crosspoint-reader/crosspoint-reader).
