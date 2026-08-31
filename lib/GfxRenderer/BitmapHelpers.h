@@ -127,37 +127,27 @@ class AtkinsonDitherer {
     if (adjusted < 0) adjusted = 0;
     if (adjusted > 255) adjusted = 255;
 
-    // Quantize to 4 levels
+    // Quantize to 4 levels. Boundaries sit at the midpoints between the
+    // native panel levels (0, 85, 170, 255 - see Bitmap.cpp's native-palette
+    // check), and quantizedValue matches those same levels so the error fed
+    // forward reflects what the pixel actually displays as. Using a mismatched
+    // quantizedValue here previously made the diffuser chase a phantom
+    // brightness deficit, overloading neighboring pixels with error and
+    // producing visible speckle instead of smooth gray.
     uint8_t quantized;
     int quantizedValue;
-    if (false) {  // original thresholds
-      if (adjusted < 43) {
-        quantized = 0;
-        quantizedValue = 0;
-      } else if (adjusted < 128) {
-        quantized = 1;
-        quantizedValue = 85;
-      } else if (adjusted < 213) {
-        quantized = 2;
-        quantizedValue = 170;
-      } else {
-        quantized = 3;
-        quantizedValue = 255;
-      }
-    } else {  // fine-tuned to X4 eink display
-      if (adjusted < 30) {
-        quantized = 0;
-        quantizedValue = 15;
-      } else if (adjusted < 50) {
-        quantized = 1;
-        quantizedValue = 30;
-      } else if (adjusted < 140) {
-        quantized = 2;
-        quantizedValue = 80;
-      } else {
-        quantized = 3;
-        quantizedValue = 210;
-      }
+    if (adjusted < 43) {
+      quantized = 0;
+      quantizedValue = 0;
+    } else if (adjusted < 128) {
+      quantized = 1;
+      quantizedValue = 85;
+    } else if (adjusted < 213) {
+      quantized = 2;
+      quantizedValue = 170;
+    } else {
+      quantized = 3;
+      quantizedValue = 255;
     }
 
     // Calculate error (only distribute 6/8 = 75%)
@@ -231,37 +221,22 @@ class FloydSteinbergDitherer {
     if (adjusted < 0) adjusted = 0;
     if (adjusted > 255) adjusted = 255;
 
-    // Quantize to 4 levels (0, 85, 170, 255)
+    // Quantize to 4 levels (0, 85, 170, 255) - see AtkinsonDitherer::processPixel
+    // for why quantizedValue must match the native panel levels.
     uint8_t quantized;
     int quantizedValue;
-    if (false) {  // original thresholds
-      if (adjusted < 43) {
-        quantized = 0;
-        quantizedValue = 0;
-      } else if (adjusted < 128) {
-        quantized = 1;
-        quantizedValue = 85;
-      } else if (adjusted < 213) {
-        quantized = 2;
-        quantizedValue = 170;
-      } else {
-        quantized = 3;
-        quantizedValue = 255;
-      }
-    } else {  // fine-tuned to X4 eink display
-      if (adjusted < 30) {
-        quantized = 0;
-        quantizedValue = 15;
-      } else if (adjusted < 50) {
-        quantized = 1;
-        quantizedValue = 30;
-      } else if (adjusted < 140) {
-        quantized = 2;
-        quantizedValue = 80;
-      } else {
-        quantized = 3;
-        quantizedValue = 210;
-      }
+    if (adjusted < 43) {
+      quantized = 0;
+      quantizedValue = 0;
+    } else if (adjusted < 128) {
+      quantized = 1;
+      quantizedValue = 85;
+    } else if (adjusted < 213) {
+      quantized = 2;
+      quantizedValue = 170;
+    } else {
+      quantized = 3;
+      quantizedValue = 255;
     }
 
     // Calculate error

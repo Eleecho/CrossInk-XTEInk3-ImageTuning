@@ -119,7 +119,33 @@ bool BmpViewerActivity::renderPngImage() {
 
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), "", (hasPrevious ? "<" : ""), (hasNext ? ">" : ""));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
-  renderer.displayBuffer(HalDisplay::FAST_REFRESH);
+
+  // GfxRenderer::BW draws any quantized level below the top (white) bin as
+  // solid black, so a single BW-mode pass collapses 3 of the 4 grayscale
+  // levels. Redecode into the LSB/MSB bit planes, same pipeline as the BMP
+  // path and SleepActivity. This re-runs the PNG inflate 3x instead of
+  // holding extra plane buffers, since C3 targets have no PSRAM headroom to
+  // spare for that - see BmpViewerActivity.h for the PSRAM fast-path TODO.
+  renderer.displayGrayscaleBase(HalDisplay::FAST_REFRESH);
+
+  renderer.setRenderMode(GfxRenderer::GRAYSCALE_LSB);
+  renderer.clearScreen(0x00);
+  if (converter.decodeToFramebuffer(filePath, renderer, config)) {
+    renderer.copyGrayscaleLsbBuffers();
+  } else {
+    LOG_ERR("BmpViewer", "Failed to redecode PNG for grayscale LSB pass");
+  }
+
+  renderer.setRenderMode(GfxRenderer::GRAYSCALE_MSB);
+  renderer.clearScreen(0x00);
+  if (converter.decodeToFramebuffer(filePath, renderer, config)) {
+    renderer.copyGrayscaleMsbBuffers();
+  } else {
+    LOG_ERR("BmpViewer", "Failed to redecode PNG for grayscale MSB pass");
+  }
+
+  renderer.displayGrayBuffer();
+  renderer.setRenderMode(GfxRenderer::BW);
   return true;
 }
 
@@ -186,9 +212,31 @@ void BmpViewerActivity::onEnter() {
 
       // Draw UI hints on the base layer
       GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
-      // Single pass for non-grayscale images
 
-      renderer.displayBuffer(HalDisplay::FAST_REFRESH);
+      // GfxRenderer::BW draws any quantized level below the top (white) bin as
+      // solid black, so a single BW-mode pass collapses 3 of the 4 grayscale
+      // levels to black. Drive the same LSB/MSB bit-plane pipeline
+      // SleepActivity::renderBitmapSleepScreen uses to get real 4-level output.
+      if (bitmap.hasGreyscale()) {
+        renderer.displayGrayscaleBase(HalDisplay::FAST_REFRESH);
+
+        bitmap.rewindToData();
+        renderer.clearScreen(0x00);
+        renderer.setRenderMode(GfxRenderer::GRAYSCALE_LSB);
+        renderer.drawBitmap(bitmap, x, y, pageWidth, pageHeight, 0, 0);
+        renderer.copyGrayscaleLsbBuffers();
+
+        bitmap.rewindToData();
+        renderer.clearScreen(0x00);
+        renderer.setRenderMode(GfxRenderer::GRAYSCALE_MSB);
+        renderer.drawBitmap(bitmap, x, y, pageWidth, pageHeight, 0, 0);
+        renderer.copyGrayscaleMsbBuffers();
+
+        renderer.displayGrayBuffer();
+        renderer.setRenderMode(GfxRenderer::BW);
+      } else {
+        renderer.displayBuffer(HalDisplay::FAST_REFRESH);
+      }
 
     } else {
       // Handle file parsing error
